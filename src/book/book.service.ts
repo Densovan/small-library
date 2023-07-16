@@ -6,6 +6,8 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Book } from './schemas/book_schema';
 import * as mongoose from 'mongoose';
+import { Query } from 'express-serve-static-core';
+import { User } from '../auth/schemas/user.schemas';
 
 @Injectable()
 export class BookService {
@@ -14,13 +16,30 @@ export class BookService {
     private bookModel: mongoose.Model<Book>,
   ) {}
 
-  async findAll(): Promise<Book[]> {
-    const books = await this.bookModel.find().exec();
+  async findAll(query: Query): Promise<Book[]> {
+    const resPerpage = 2;
+    const currentPage = Number(query.page) || 1;
+    const skip = resPerpage * (currentPage - 1);
+    const keyword = query.keyword
+      ? {
+          title: {
+            $regex: query.keyword,
+            $options: 'i',
+          },
+        }
+      : {};
+    const books = await this.bookModel
+      .find({ ...keyword })
+      .limit(resPerpage)
+      .skip(skip);
     return books;
   }
 
-  async create(book: Book): Promise<Book> {
-    const res = await this.bookModel.create(book);
+  async create(book: Book, user: User): Promise<Book> {
+    const data = Object.assign(book, {
+      user: user._id,
+    });
+    const res = await this.bookModel.create(data);
     return res;
   }
 
@@ -37,6 +56,9 @@ export class BookService {
   }
 
   async updateBookById(id: string, book: Book): Promise<Book> {
+    // const dataInput = Object.assign(book, {
+    //   user: user._id,
+    // });
     const data: any = await this.bookModel.findByIdAndUpdate(id, book, {
       new: true,
       runValidators: true,

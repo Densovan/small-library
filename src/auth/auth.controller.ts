@@ -19,13 +19,11 @@ export class AuthController {
 
   //=======signup============
   @Post('/signup')
-  // @UsePipes(new ValidationPipe())
   signup(@Body() signup: signUpDto): Promise<{ message: message }> {
     return this.authService.signup(signup);
   }
   //==========signin==========
   @Post('/signin')
-  // @UsePipes(new ValidationPipe())
   sigin(@Body() signin: signInDto): Promise<{ message: message }> {
     return this.authService.signin(signin);
   }
